@@ -6,7 +6,7 @@ const authenticate = require('../authenticate');
 const router = express.Router();
 
 /* GET users listing. */
-router.get(authenticate.verifyAdmin, '/', function(req, res, next) {
+router.get('/', authenticate.verifyAdmin, (req, res, next)  => {
     User.find()
     .then(users => {
         res.statusCode = 200;
@@ -14,6 +14,7 @@ router.get(authenticate.verifyAdmin, '/', function(req, res, next) {
         res.json(users);
         })
     .catch(err => next(err));
+    
 });
 
 router.post('/signup', (req, res) => {
