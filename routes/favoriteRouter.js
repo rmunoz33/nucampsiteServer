@@ -14,7 +14,6 @@ favoriteRouter.route('/')
         user: req.user._id
     })
     .then(favorite => {
-        console.log(favorite);
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(favorite);
@@ -72,19 +71,16 @@ favoriteRouter.route('/')
     })
     .then(favorite => {
         if (favorite) {
-            let x = favorite.campsites.indexOf(req.user._id);
-            if (x !== -1) {
-                favorite.campsites.splice(x, 1)
-                .then(response => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(response);
-                })
-                .catch(err => next(err));
-            } 
+            favorite.campsites = [];
         } else {
             res.end('User has no favorites to delete!');
         }
+        favorite.save()
+        .then(favorite => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(favorite);
+        })
     })
     .catch(err => next(err));
 })
@@ -103,12 +99,10 @@ favoriteRouter.route('/:campsiteId')
     })
     .then(favorite => {
     // if so, only add campsiteId if not already in favorite document
-    console.log(favorite);
         if (favorite) {
-            let x = favorite.campsites.indexOf(favorite._id);
-            console.log(x);
+            let x = favorite.campsites.indexOf(req.params.campsiteId);
             if (x == -1) {
-                favorite.campsites.push(favorite._id);
+                favorite.campsites.push(req.params.campsiteId);
                 favorite.save()
                 .then(favorite => {
                     res.statusCode = 200;
@@ -123,7 +117,7 @@ favoriteRouter.route('/:campsiteId')
             // if no campsite document for user, add one and add the campsite from the URL parameter to its array of campsites
             Favorite.create({
                 user: req.user._id,
-                campsites: req.body 
+                campsites: req.params.campsiteId 
             })
             .then(favorite => {
                 console.log('Favorite Created ', favorite);
@@ -142,6 +136,28 @@ favoriteRouter.route('/:campsiteId')
 })
 .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     // If there is a favorite document for the user, check if campsiteId from URL param is in its campsites array, delete if so
+    Favorite.findOne({
+        user: req.user._id
+    })
+    .then(favorite => {
+        if (favorite) {
+            let x = favorite.campsites.indexOf(req.params.campsiteId);
+            if (x !== -1) {
+                favorite.campsites.pop(req.params.campsiteId);   
+            } else {
+                res.end('That campsite is not in the list of favorites!')
+            }
+        } else {
+            res.end('User has no favorites to delete!');
+        }
+        favorite.save()
+        .then(favorite => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(favorite);
+        })
+    })
+    .catch(err => next(err));
 })
 
 
